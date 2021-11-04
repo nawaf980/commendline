@@ -1,0 +1,41 @@
+HParse gram.txt wdnet
+HSGen -l -n 50 wdnet dict.txt > testprompts
+HLEd -l '*' -d dict.txt -i phones0.mlf mkphones0.led words.mlf
+HCopy -T 1 -C config.txt -S codetr.scp
+HCompV -C config.txt -f 0.01 -m -S train.scp -M hmm0 proto
+
+HERest -C config.txt -I phones0.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm0/macros -H hmm0/hmmdefs -M hmm1 monophones0
+HERest -C config.txt -I phones0.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm1/macros -H hmm1/hmmdefs -M hmm2 monophones0
+HERest -C config.txt -I phones0.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm2/macros -H hmm2/hmmdefs -M hmm3 monophones0
+HHEd -H hmm4/macros -H hmm4/hmmdefs -M hmm5 sil.hed monophones1
+HERest -C config.txt -I phones1.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm5/macros -H hmm5/hmmdefs -M hmm6 monophones1
+HERest -C config.txt -I phones1.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm6/macros -H hmm6/hmmdefs -M hmm7 monophones1
+HVite -H hmm7/macros -H hmm7/hmmdefs -S train.scp -l '*' -i aligned.mlf -w wdnet -p 0.0 -s 5.0 -o TS dict.txt monophones1
+HERest -C config.txt -I phones1.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm7/macros -H hmm7/hmmdefs -M hmm8 monophones1
+HERest -C config.txt -I phones1.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm8/macros -H hmm8/hmmdefs -M hmm9 monophones1
+
+______________________________________________________________________________________________________________________________
+
+HLEd -n triphones1 -l '*' -i wintri.mlf mktri.led phones1.mlf
+HHEd -B -H hmm9/macros -H hmm9/hmmdefs -M hmm10 mktri.hed monophones1
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -s stats -S train.scp -H hmm10/macros -H hmm10/hmmdefs -M hmm11 triphones1
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm11/macros -H hmm11/hmmdefs -M hmm12 triphones1
+__________________________________________________________________________________________________________________________________
+
+HDMan -b sp -n fulllist -g global.ded -l flog beep-tri dict.txt
+HHEd -B -H hmm12/macros -H hmm12/hmmdefs -M hmm13 tree.hed triphones1 > log
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm13/macros -H hmm13/hmmdefs -M hmm14 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm14/macros -H hmm14/hmmdefs -M hmm15 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm15/macros -H hmm15/hmmdefs -M hmm16 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm16/macros -H hmm16/hmmdefs -M hmm17 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm17/macros -H hmm17/hmmdefs -M hmm18 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm18/macros -H hmm18/hmmdefs -M hmm19 tiedlist 
+HERest -B -C config.txt -I wintri.mlf -t 250.0 150.0 1000.0 -S train.scp -H hmm19/macros -H hmm19/hmmdefs -M hmm20 tiedlist 
+HVite -H hmm20/macros -H hmm20/hmmdefs -S train.scp -l '*' -i recout.mlf -w wdnet -p 0.0 -s 5.0 -o TS dict.txt tiedlist
+HResults -I words.mlf tiedlist recout.mlf
+HVite -H hmm20/macros -H hmm20/hmmdefs -C config2.txt -w wdnet -p 0.0 -s 5.0 dict.txt tiedlist
+
+
+FOR GETTING THE PHONEME SEGMENTATION
+
+HVite -H hmm8/macros -H hmm8/hmmdefs -i words1.mlf -m -t 250.0 -y lab -I words.mlf -S train.scp -L c:/11march2010 dict.txt monophones1
